@@ -6,6 +6,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// database.connectToServer();
+
 app.get("/api", (req, res) => {
   res.json({ message: "Hello from server!" });
 });
@@ -22,7 +24,13 @@ app.put("/submitFormValues", (req, res) => {
   console.log("submitFormValues", req.body);
   // console.log("submitFormValues dbClient: ", dbClient);
   database.createFormData(req.body);
-  // res.json({ message: "Hello from server!" });
+  res.json({ message: "Submitted your response." });
+});
+
+app.put("/saveForm", (req, res) => {
+  console.log("saveForm", req.body);
+  database.saveForm(req.body);
+  res.json({ message: "Your form has been saved." });
 });
 
 app.get("/", (req, res) => {

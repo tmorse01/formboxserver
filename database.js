@@ -11,23 +11,28 @@ module.exports = {
     if (_dbClient) {
       return _dbClient;
     } else {
-      console.log("else getClient: ", _dbClient);
       return await this.connectToServer();
     }
   },
   connectToServer: function () {
     const uri = "mongodb://localhost:27017";
-    console.log("connectToServer");
-    MongoClient.connect(uri, async function (err, client) {
-      //create instance of mongo client
-      _dbClient = client;
-      console.log("connected to mongodb client: ", _dbClient);
-      // if (callback) return callback(err);
-    });
+    const client = new MongoClient(uri);
+    client.connect();
+    _dbClient = client;
+    console.log("connected to SERVER test");
+    return client;
+    // return MongoClient.connect(uri, async function (err, client) {
+    //   //create instance of mongo client
+    //   _dbClient = client;
+    //   return client;
+    //   console.log("connected to mongodb client: ", _dbClient);
+    //   // if (callback) return callback(err);
+    // });
   },
   createFormData: async function (newFormData) {
     console.log("createFormData: ", newFormData);
-    const result = await _dbClient
+    const client = await this.getClient();
+    const result = await client
       .db("formboxdata")
       .collection("formdata")
       .insertOne(newFormData);
@@ -35,7 +40,8 @@ module.exports = {
       `New form data created with the following id: ${result.insertedId} `
     );
   },
-  createMultipleFormData: async function (client, newFormDataArray) {
+  createMultipleFormData: async function (newFormDataArray) {
+    const client = await this.getClient();
     const result = await client
       .db("formboxdata")
       .collection("formdata")
@@ -44,6 +50,16 @@ module.exports = {
       `${result.insertedCount} new form data created with the following id(s):`
     );
     console.log(result.insertedIds);
+  },
+  saveForm: async function (formObject) {
+    const client = await this.getClient();
+    const result = await client
+      .db("formboxdata")
+      .collection("forms")
+      .insertOne(formObject);
+    console.log(
+      `New form data created with the following id: ${result.insertedId} `
+    );
   },
 
   // async function listDatabases(client) {
