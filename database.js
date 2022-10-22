@@ -61,6 +61,26 @@ module.exports = {
       `New form data created with the following id: ${result.insertedId} `
     );
   },
+  getForms: async function () {
+    console.log("call to getForms");
+    const client = await this.getClient();
+    const results = await client
+      .db("formboxdata")
+      .collection("forms")
+      .find()
+      .toArray();
+    return results;
+  },
+  getFormData: async function (documentName) {
+    console.log("call to getFormData", documentName);
+    const client = await this.getClient();
+    const results = await client
+      .db("formboxdata")
+      .collection("formdata")
+      .find({ documentName: documentName })
+      .toArray();
+    return results;
+  },
 
   // async function listDatabases(client) {
   //   const databasesList = await client.db().admin().listDatabases();

@@ -33,6 +33,22 @@ app.put("/saveForm", (req, res) => {
   res.json({ message: "Your form has been saved." });
 });
 
+app.get("/getForms", (req, res) => {
+  console.log("getForms");
+  database.getForms().then((results) => {
+    console.log("Results: ", results);
+    res.json({ results: results });
+  });
+});
+
+app.post("/getFormData", (req, res) => {
+  console.log("getFormData", req.body);
+  let documentName = req.body.documentName;
+  database.getFormData(documentName).then((results) => {
+    res.json({ results: results });
+  });
+});
+
 app.get("/", (req, res) => {
   console.log("home");
   res.render("index");
