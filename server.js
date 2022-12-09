@@ -12,17 +12,32 @@ app.get("/api", (req, res) => {
   res.json({ message: "Hello from server!" });
 });
 
+app.post("/login", (req, res) => {
+  console.log("Login attempt", req.body);
+  database.login(req.body).then((token) => {
+    console.log("login token :", token);
+    res.json({
+      message: "User login succuessful",
+      username: req.body.username,
+      token: token,
+    });
+  });
+});
+
+app.post("/signup", (req, res) => {
+  console.log("Signup", req.body);
+  database.signup(req.body);
+  res.json({ message: "User signup successful", token: "random" });
+});
+
 app.get("/connectToDb", (req, res) => {
-  console.log("CONNECT TO DB");
+  console.log("Connecting to mongodb");
   database.connectToServer();
-  // var dbClient = database.getClient();
-  // console.log("dbClient on connect: ", dbClient);
   res.json({ message: "Connected to mongodb client" });
 });
 
 app.put("/submitFormValues", (req, res) => {
   console.log("submitFormValues", req.body);
-  // console.log("submitFormValues dbClient: ", dbClient);
   database.createFormData(req.body);
   res.json({ message: "Submitted your response." });
 });
@@ -34,9 +49,7 @@ app.put("/saveForm", (req, res) => {
 });
 
 app.get("/getForms", (req, res) => {
-  console.log("getForms");
   database.getForms().then((results) => {
-    console.log("Results: ", results);
     res.json({ results: results });
   });
 });

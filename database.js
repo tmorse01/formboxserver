@@ -1,9 +1,17 @@
 const { MongoClient } = require("mongodb");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+dotenv.config();
 
 var testData = require("./sampledata/tmorsedata.json");
 var arrayOfTestData = require("./sampledata/arrayoftestdata.json");
 
 var _dbClient;
+
+function generateAccessToken(username) {
+  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
+}
 
 module.exports = {
   getClient: async function () {
@@ -28,6 +36,50 @@ module.exports = {
     //   console.log("connected to mongodb client: ", _dbClient);
     //   // if (callback) return callback(err);
     // });
+  },
+  login: async function (loginInfo) {
+    console.log("login: ", loginInfo);
+    const client = await this.getClient();
+    const result = await client
+      .db("formboxdata")
+      .collection("users")
+      .findOne({ username: loginInfo.username });
+    const encryptedUserPassword = result.password;
+    // Comparing the user input password to one associted with user in the db
+    const isMatch = await bcrypt.compare(
+      loginInfo.password,
+      encryptedUserPassword
+    );
+    if (isMatch) {
+      return generateAccessToken({ username: loginInfo.username });
+    } else {
+      return undefined;
+    }
+  },
+  signup: async function (loginInfo) {
+    console.log("signup: ", loginInfo);
+    const client = await this.getClient();
+    const password = loginInfo.password;
+    bcrypt.genSalt(10, function (err, Salt) {
+      // The bcrypt is used for encrypting password.
+      bcrypt.hash(password, Salt, async function (err, hash) {
+        if (err) {
+          return console.log("Cannot encrypt");
+        }
+        const result = await client
+          .db("formboxdata")
+          .collection("users")
+          .insertOne({
+            username: loginInfo.username,
+            password: hash,
+          });
+        // handle error path return something here
+
+        console.log(
+          `User sign up: ${loginInfo.username} ${result.insertedId} `
+        );
+      });
+    });
   },
   createFormData: async function (newFormData) {
     console.log("createFormData: ", newFormData);
@@ -62,7 +114,7 @@ module.exports = {
     );
   },
   getForms: async function () {
-    console.log("call to getForms");
+    // console.log("call to getForms");
     const client = await this.getClient();
     const results = await client
       .db("formboxdata")
@@ -72,7 +124,7 @@ module.exports = {
     return results;
   },
   getFormData: async function (documentName) {
-    console.log("call to getFormData", documentName);
+    // console.log("call to getFormData", documentName);
     const client = await this.getClient();
     const results = await client
       .db("formboxdata")
