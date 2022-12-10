@@ -44,8 +44,15 @@ app.put("/submitFormValues", (req, res) => {
 
 app.put("/saveForm", (req, res) => {
   console.log("saveForm", req.body);
-  database.saveForm(req.body);
-  res.json({ message: "Your form has been saved." });
+  database.saveForm(req.body).then((success) => {
+    if (success) {
+      res.json({ message: "Your form has been saved." });
+    } else {
+      res.json({
+        error: "There was an error saving your form. Try another unique name.",
+      });
+    }
+  });
 });
 
 app.get("/getForms", (req, res) => {
