@@ -119,13 +119,12 @@ module.exports = {
       return false;
     }
   },
-  getForms: async function () {
-    // console.log("call to getForms");
+  getForms: async function (username) {
     const client = await this.getClient();
     const results = await client
       .db("formboxdata")
       .collection("forms")
-      .find()
+      .find({ username })
       .toArray();
     return results;
   },

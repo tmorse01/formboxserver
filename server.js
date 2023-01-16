@@ -64,7 +64,9 @@ app.put("/saveForm", (req, res) => {
 });
 
 app.get("/getForms", (req, res) => {
-  database.getForms().then((results) => {
+  const queryParams = req.query;
+  const username = queryParams.username;
+  database.getForms(username).then((results) => {
     res.json({ results: results });
   });
 });
