@@ -16,11 +16,19 @@ app.post("/login", (req, res) => {
   console.log("Login attempt", req.body);
   database.login(req.body).then((token) => {
     console.log("login token :", token);
-    res.json({
-      message: "User login succuessful",
-      username: req.body.username,
-      token: token,
-    });
+    if (token !== undefined) {
+      res.json({
+        message: "User login succuessful",
+        username: req.body.username,
+        token: token,
+      });
+    } else {
+      res.json({
+        message: "Failed login. Please check your username and password.",
+        username: req.body.username,
+        token: undefined,
+      });
+    }
   });
 });
 
