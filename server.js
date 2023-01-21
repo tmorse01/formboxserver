@@ -57,7 +57,7 @@ app.put("/saveForm", (req, res) => {
       res.json({ message: "Your form has been saved." });
     } else {
       res.json({
-        error: "There was an error saving your form. Try another unique name.",
+        error: "There was an error saving your form.",
       });
     }
   });

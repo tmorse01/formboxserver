@@ -105,13 +105,16 @@ module.exports = {
   },
   saveForm: async function (formObject) {
     const client = await this.getClient();
+    const formName = formObject.formName;
+
     try {
+      // upsert
       const result = await client
         .db("formboxdata")
         .collection("forms")
-        .insertOne(formObject);
+        .update({ formName }, { $set: formObject }, { upsert: true });
       console.log(
-        `New form data created with the following id: ${result.insertedId} `
+        `Form form data saved with the following id: ${result.insertedId} `
       );
       return true;
     } catch (e) {
