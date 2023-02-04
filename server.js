@@ -71,10 +71,18 @@ app.get("/getForms", (req, res) => {
   });
 });
 
+app.get("/getForm", (req, res) => {
+  const queryParams = req.query;
+  const form = queryParams.form;
+  database.getForm(form).then((results) => {
+    res.json({ results: results });
+  });
+});
+
 app.post("/getFormData", (req, res) => {
   console.log("getFormData", req.body);
-  let documentName = req.body.documentName;
-  database.getFormData(documentName).then((results) => {
+  let formName = req.body.formName;
+  database.getFormData(formName).then((results) => {
     res.json({ results: results });
   });
 });

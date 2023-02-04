@@ -131,13 +131,21 @@ module.exports = {
       .toArray();
     return results;
   },
-  getFormData: async function (documentName) {
-    // console.log("call to getFormData", documentName);
+  getForm: async function (form) {
+    const client = await this.getClient();
+    const results = await client
+      .db("formboxdata")
+      .collection("forms")
+      .findOne({ formName: form });
+    return results;
+  },
+  getFormData: async function (formName) {
+    // console.log("call to getFormData", formName);
     const client = await this.getClient();
     const results = await client
       .db("formboxdata")
       .collection("formdata")
-      .find({ documentName: documentName })
+      .find({ formName: formName })
       .toArray();
     return results;
   },
