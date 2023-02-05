@@ -20,10 +20,10 @@ module.exports = {
     }
   },
   connectToServer: async function () {
-    // console.log(
-    //   "process.env.MONGO_DB_CONNECTION",
-    //   process.env.MONGO_DB_CONNECTION
-    // );
+    console.log(
+      "connectToServer mongo db connection",
+      process.env.MONGO_DB_CONNECTION
+    );
     try {
       const uri = process.env.MONGO_DB_CONNECTION;
       const client = new MongoClient(uri);
