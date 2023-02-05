@@ -12,7 +12,7 @@ function generateAccessToken(username) {
 
 module.exports = {
   getClient: async function () {
-    // console.log("getClient: ", _dbClient);
+    console.log("getClient: ", _dbClient);
     if (_dbClient) {
       return _dbClient;
     } else {
@@ -29,7 +29,7 @@ module.exports = {
       const client = new MongoClient(uri);
       await client.connect();
       _dbClient = client;
-      // console.log("connected to SERVER test", client);
+      console.log("connected to SERVER test", client);
       return client;
     } catch (e) {
       console.error("ERROR connecting to mongodb client: ", e);
