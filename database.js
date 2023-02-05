@@ -24,12 +24,13 @@ module.exports = {
       "connectToServer mongo db connection",
       process.env.MONGO_DB_CONNECTION
     );
+    const uri = process.env.MONGO_DB_CONNECTION;
+    const client = new MongoClient(uri);
+    console.log("connected to SERVER test", client);
+
     try {
-      const uri = process.env.MONGO_DB_CONNECTION;
-      const client = new MongoClient(uri);
-      await client.connect();
+      client.connect();
       _dbClient = client;
-      console.log("connected to SERVER test", client);
       return client;
     } catch (e) {
       console.error("ERROR connecting to mongodb client: ", e);
