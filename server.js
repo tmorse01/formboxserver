@@ -13,9 +13,8 @@ app.get("/api", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  console.log("Login attempt", req.body);
+  // console.log("Login attempt", req.body);
   database.login(req.body).then((token) => {
-    console.log("login token :", token);
     if (token !== undefined) {
       res.json({
         message: "User login succuessful",
@@ -33,25 +32,39 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/signup", (req, res) => {
-  console.log("Signup", req.body);
+  // console.log("Signup", req.body);
   database.signup(req.body);
   res.json({ message: "User signup successful", token: "random" });
 });
 
 app.get("/connectToDb", (req, res) => {
-  console.log("Connecting to mongodb");
+  // console.log("Connecting to mongodb");
   database.connectToServer();
   res.json({ message: "Connected to mongodb client" });
 });
 
+app.get("/disconnectDb", (req, res) => {
+  // console.log("Closing connection to mongodb");
+  var result = database.disconnectDb();
+  if (result === true) {
+    res.json({ message: "Disconnected mongodb client" });
+  } else {
+    res.json({ error: "Error disconnecting mongodb client" });
+  }
+});
+
 app.put("/submitFormValues", (req, res) => {
-  console.log("submitFormValues", req.body);
-  database.createFormData(req.body);
-  res.json({ message: "Submitted your response." });
+  // console.log("submitFormValues");
+  var insertedRecord = database.createFormData(req.body);
+  if (insertedRecord) {
+    res.json({ message: "Submitted your response." });
+  } else {
+    res.json({ error: "Error submitting your response." });
+  }
 });
 
 app.put("/saveForm", (req, res) => {
-  console.log("saveForm", req.body);
+  // console.log("saveForm", req.body);
   database.saveForm(req.body).then((success) => {
     if (success) {
       res.json({ message: "Your form has been saved." });
@@ -80,7 +93,7 @@ app.get("/getForm", (req, res) => {
 });
 
 app.post("/getFormData", (req, res) => {
-  console.log("getFormData", req.body);
+  // console.log("getFormData", req.body);
   let formName = req.body.formName;
   database.getFormData(formName).then((results) => {
     res.json({ results: results });
@@ -88,7 +101,7 @@ app.post("/getFormData", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  console.log("home");
+  // console.log("home");
   res.render("index");
 });
 

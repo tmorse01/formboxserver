@@ -4,9 +4,6 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
 
-var testData = require("./sampledata/tmorsedata.json");
-var arrayOfTestData = require("./sampledata/arrayoftestdata.json");
-
 var _dbClient;
 
 function generateAccessToken(username) {
@@ -22,38 +19,57 @@ module.exports = {
       return await this.connectToServer();
     }
   },
-  connectToServer: function () {
-    const uri = "mongodb://localhost:27017";
-    const client = new MongoClient(uri);
-    client.connect();
-    _dbClient = client;
-    console.log("connected to SERVER test");
-    return client;
-    // return MongoClient.connect(uri, async function (err, client) {
-    //   //create instance of mongo client
-    //   _dbClient = client;
-    //   return client;
-    //   console.log("connected to mongodb client: ", _dbClient);
-    //   // if (callback) return callback(err);
-    // });
+  connectToServer: async function () {
+    // console.log(
+    //   "process.env.MONGO_DB_CONNECTION",
+    //   process.env.MONGO_DB_CONNECTION
+    // );
+    try {
+      const uri = process.env.MONGO_DB_CONNECTION;
+      const client = new MongoClient(uri);
+      await client.connect();
+      _dbClient = client;
+      // console.log("connected to SERVER test", client);
+      return client;
+    } catch (e) {
+      console.error("ERROR connecting to mongodb client: ", e);
+    }
+  },
+  disconnectDb: async function () {
+    try {
+      if (_dbClient) {
+        _dbClient.close();
+        _dbClient = undefined;
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      console.error("ERROR disconnecting mongodb client: ", e);
+      return false;
+    }
   },
   login: async function (loginInfo) {
     console.log("login: ", loginInfo);
-    const client = await this.getClient();
-    const result = await client
-      .db("formboxdata")
-      .collection("users")
-      .findOne({ username: loginInfo.username });
-    const encryptedUserPassword = result.password;
-    // Comparing the user input password to one associted with user in the db
-    const isMatch = await bcrypt.compare(
-      loginInfo.password,
-      encryptedUserPassword
-    );
-    if (isMatch) {
-      return generateAccessToken({ username: loginInfo.username });
-    } else {
-      return undefined;
+    try {
+      const client = await this.getClient();
+      const result = await client
+        .db("formboxdata")
+        .collection("users")
+        .findOne({ username: loginInfo.username });
+      const encryptedUserPassword = result.password;
+      // Comparing the user input password to one associted with user in the db
+      const isMatch = await bcrypt.compare(
+        loginInfo.password,
+        encryptedUserPassword
+      );
+      if (isMatch) {
+        return generateAccessToken({ username: loginInfo.username });
+      } else {
+        return undefined;
+      }
+    } catch (e) {
+      console.error("ERROR with login: ", e);
     }
   },
   signup: async function (loginInfo) {
@@ -88,9 +104,15 @@ module.exports = {
       .db("formboxdata")
       .collection("formdata")
       .insertOne(newFormData);
-    console.log(
-      `New form data created with the following id: ${result.insertedId} `
-    );
+
+    if (result.insertedId !== undefined) {
+      console.log(
+        `New form data created with the following id: ${result.insertedId} `
+      );
+      return true;
+    } else {
+      return false;
+    }
   },
   createMultipleFormData: async function (newFormDataArray) {
     const client = await this.getClient();
