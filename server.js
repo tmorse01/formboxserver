@@ -2,7 +2,12 @@ const database = require("./database");
 const express = require("express");
 const app = express();
 const cors = require("cors");
-app.use(cors());
+const corsOptions = {
+  origin: "formboxapp.com",
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
