@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const corsOptions = {
-  origin: "formboxapp.com",
+  origin: "*",
   optionsSuccessStatus: 200,
 };
 
@@ -44,17 +44,21 @@ app.post("/signup", (req, res) => {
 
 app.get("/connectToDb", (req, res) => {
   // console.log("Connecting to mongodb");
-  database.connectToServer();
-  res.json({ message: "Connected to mongodb client" });
+  var client = database.connectToServer();
+  if (client) {
+    res.status(200).json({ message: "Connected to mongodb client" });
+  } else {
+    res.status(500).json({ error: "Error connecting to mongodb client" });
+  }
 });
 
 app.get("/disconnectDb", (req, res) => {
   // console.log("Closing connection to mongodb");
   var result = database.disconnectDb();
   if (result === true) {
-    res.json({ message: "Disconnected mongodb client" });
+    res.status(200).json({ message: "Disconnected mongodb client" });
   } else {
-    res.json({ error: "Error disconnecting mongodb client" });
+    res.status(500).json({ error: "Error disconnecting mongodb client" });
   }
 });
 
