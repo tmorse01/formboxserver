@@ -12,7 +12,7 @@ function generateAccessToken(username) {
 
 module.exports = {
   getClient: async function () {
-    console.log("getClient: ", _dbClient);
+    // console.log("getClient: ", _dbClient);
     if (_dbClient) {
       return _dbClient;
     } else {
@@ -20,13 +20,13 @@ module.exports = {
     }
   },
   connectToServer: async function () {
-    console.log(
-      "connectToServer mongo db connection",
-      process.env.MONGO_DB_CONNECTION
-    );
+    // console.log(
+    //   "connectToServer mongo db connection",
+    //   process.env.MONGO_DB_CONNECTION
+    // );
     const uri = process.env.MONGO_DB_CONNECTION;
     const client = new MongoClient(uri);
-    console.log("connected to SERVER test", client);
+    // console.log("connected to SERVER test", client);
 
     try {
       client.connect();
@@ -77,24 +77,31 @@ module.exports = {
     console.log("signup: ", loginInfo);
     const client = await this.getClient();
     const password = loginInfo.password;
-    bcrypt.genSalt(10, function (err, Salt) {
+    // TODO handle return from these nested callback functions during user sign up so
+    // you can tell when a insertOne was successful
+    return bcrypt.genSalt(10, function (err, Salt) {
       // The bcrypt is used for encrypting password.
-      bcrypt.hash(password, Salt, async function (err, hash) {
+      return bcrypt.hash(password, Salt, async function (err, hash) {
         if (err) {
           return console.log("Cannot encrypt");
         }
-        const result = await client
-          .db("formboxdata")
-          .collection("users")
-          .insertOne({
-            username: loginInfo.username,
-            password: hash,
-          });
-        // handle error path return something here
-
-        console.log(
-          `User sign up: ${loginInfo.username} ${result.insertedId} `
-        );
+        try {
+          const result = await client
+            .db("formboxdata")
+            .collection("users")
+            .insertOne({
+              username: loginInfo.username,
+              password: hash,
+            });
+          // handle error path return something here
+          console.log(
+            `User sign up: ${loginInfo.username} ${result.insertedId} `
+          );
+          return result;
+        } catch (e) {
+          console.error("Error with user sign up: ", e);
+          return false;
+        }
       });
     });
   },

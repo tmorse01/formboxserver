@@ -38,8 +38,18 @@ app.post("/login", (req, res) => {
 
 app.post("/signup", (req, res) => {
   // console.log("Signup", req.body);
-  database.signup(req.body);
-  res.json({ message: "User signup successful", token: "random" });
+  var result = database.signup(req.body);
+  console.log("Result from sign up: ", result);
+  if (result !== false) {
+    res
+      .status(200)
+      .json({ message: "User signup successful", token: "random" });
+  } else {
+    res.status(500).json({
+      error: "User signup failed. Try a different username.",
+      token: "random",
+    });
+  }
 });
 
 app.get("/connectToDb", (req, res) => {
