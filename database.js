@@ -29,7 +29,7 @@ module.exports = {
     // console.log("connected to SERVER test", client);
 
     try {
-      client.connect();
+      await client.connect();
       _dbClient = client;
       return client;
     } catch (e) {
@@ -73,16 +73,22 @@ module.exports = {
       console.error("ERROR with login: ", e);
     }
   },
-  signup: async function (loginInfo) {
-    console.log("signup: ", loginInfo);
+  signup: async function (req, res) {
+    console.log("signup: ", req, res);
+    var loginInfo = req.body;
     const client = await this.getClient();
     const password = loginInfo.password;
-    // TODO handle return from these nested callback functions during user sign up so
     // you can tell when a insertOne was successful
-    return bcrypt.genSalt(10, function (err, Salt) {
+    bcrypt.genSalt(10, function (err, Salt) {
       // The bcrypt is used for encrypting password.
-      return bcrypt.hash(password, Salt, async function (err, hash) {
+      bcrypt.hash(password, Salt, async function (err, hash) {
         if (err) {
+          res.status(400).json({
+            error: {
+              code: 400,
+              message: "Cannot encrpyt password. Please try another.",
+            },
+          });
           return console.log("Cannot encrypt");
         }
         try {
@@ -93,14 +99,22 @@ module.exports = {
               username: loginInfo.username,
               password: hash,
             });
-          // handle error path return something here
+
           console.log(
             `User sign up: ${loginInfo.username} ${result.insertedId} `
           );
+          res
+            .status(200)
+            .json({ success: true, message: "User signup successful." });
           return result;
         } catch (e) {
           console.error("Error with user sign up: ", e);
-          return false;
+          res.status(400).json({
+            error: {
+              code: 400,
+              message: "Username already taken.",
+            },
+          });
         }
       });
     });
@@ -142,10 +156,8 @@ module.exports = {
       const result = await client
         .db("formboxdata")
         .collection("forms")
-        .update({ formName }, { $set: formObject }, { upsert: true });
-      console.log(
-        `Form form data saved with the following id: ${result.insertedId} `
-      );
+        .updateOne({ formName }, { $set: formObject }, { upsert: true });
+      console.log(`Form data saved name: ${formName} id: ${result.upsertedId}`);
       return true;
     } catch (e) {
       console.error("Error saving form :", e);
@@ -162,12 +174,17 @@ module.exports = {
     return results;
   },
   getForm: async function (form) {
-    const client = await this.getClient();
-    const results = await client
-      .db("formboxdata")
-      .collection("forms")
-      .findOne({ formName: form });
-    return results;
+    try {
+      const client = await this.getClient();
+      const results = await client
+        .db("formboxdata")
+        .collection("forms")
+        .findOne({ formName: form });
+
+      return results;
+    } catch (e) {
+      console.error("Error fetching form: ", form);
+    }
   },
   getFormData: async function (formName) {
     // console.log("call to getFormData", formName);

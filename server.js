@@ -38,18 +38,7 @@ app.post("/login", (req, res) => {
 
 app.post("/signup", (req, res) => {
   // console.log("Signup", req.body);
-  var result = database.signup(req.body);
-  console.log("Result from sign up: ", result);
-  if (result !== false) {
-    res
-      .status(200)
-      .json({ message: "User signup successful", token: "random" });
-  } else {
-    res.status(500).json({
-      error: "User signup failed. Try a different username.",
-      token: "random",
-    });
-  }
+  database.signup(req, res);
 });
 
 app.get("/connectToDb", (req, res) => {
@@ -107,7 +96,17 @@ app.get("/getForm", (req, res) => {
   const queryParams = req.query;
   const form = queryParams.form;
   database.getForm(form).then((results) => {
-    res.json({ results: results });
+    if (results === null) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 400,
+          message: "No form found by that name.",
+        },
+      });
+    } else {
+      res.status(200).json({ success: true, results: results });
+    }
   });
 });
 
