@@ -2,6 +2,7 @@ const database = require("./database");
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const { authenticateToken } = require("./auth");
 const corsOptions = {
   origin: "*",
   optionsSuccessStatus: 200,
@@ -21,6 +22,7 @@ app.get("/api", (req, res) => {
 app.post("/login", (req, res) => {
   // console.log("Login attempt", req.body);
   database.login(req.body).then((token) => {
+    console.log("login res: ", token);
     if (token !== undefined) {
       res.json({
         message: "User login succuessful",
@@ -78,6 +80,9 @@ app.put("/saveForm", (req, res) => {
     if (success) {
       res.json({ message: "Your form has been saved." });
     } else {
+      // handle more error cases
+      // user not signed in
+      //
       res.json({
         error: "There was an error saving your form.",
       });
@@ -85,9 +90,9 @@ app.put("/saveForm", (req, res) => {
   });
 });
 
-app.get("/getForms", (req, res) => {
-  const queryParams = req.query;
-  const username = queryParams.username;
+app.get("/getForms", authenticateToken, (req, res) => {
+  console.log("getForms: ", req.user);
+  const username = req.user.username;
   database.getForms(username).then((results) => {
     res.json({ results: results });
   });
@@ -111,7 +116,7 @@ app.get("/getForm", (req, res) => {
   });
 });
 
-app.post("/getFormData", (req, res) => {
+app.post("/getFormData", authenticateToken, (req, res) => {
   // console.log("getFormData", req.body);
   let formName = req.body.formName;
   database.getFormData(formName).then((results) => {

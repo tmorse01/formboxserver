@@ -1,14 +1,11 @@
 const { MongoClient } = require("mongodb");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
 
-var _dbClient;
+const auth = require("./auth.js");
 
-function generateAccessToken(username) {
-  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
-}
+var _dbClient;
 
 module.exports = {
   getClient: async function () {
@@ -65,7 +62,13 @@ module.exports = {
         encryptedUserPassword
       );
       if (isMatch) {
-        return generateAccessToken({ username: loginInfo.username });
+        const accessToken = auth.generateAccessToken({
+          username: loginInfo.username,
+        });
+        const refreshToken = auth.generateRefreshToken({
+          username: loginInfo.username,
+        });
+        return { accessToken, refreshToken };
       } else {
         return undefined;
       }
