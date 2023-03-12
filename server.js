@@ -44,8 +44,8 @@ app.post("/signup", (req, res) => {
   database.signup(req, res);
 });
 
-app.get("/connectToDb", (req, res) => {
-  // console.log("Connecting to mongodb");
+app.post("/connectToDb", (req, res) => {
+  console.log("Connecting to mongodb");
   var client = database.connectToServer();
   if (client) {
     res.status(200).json({ message: "Connected to mongodb client" });
@@ -54,7 +54,7 @@ app.get("/connectToDb", (req, res) => {
   }
 });
 
-app.get("/disconnectDb", (req, res) => {
+app.post("/disconnectDb", (req, res) => {
   // console.log("Closing connection to mongodb");
   var result = database.disconnectDb();
   if (result === true) {
