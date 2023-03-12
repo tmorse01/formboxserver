@@ -22,7 +22,7 @@ app.get("/api", (req, res) => {
 app.post("/login", (req, res) => {
   // console.log("Login attempt", req.body);
   database.login(req.body).then((token) => {
-    console.log("login res: ", token);
+    // console.log("login res: ", token);
     if (token !== undefined) {
       res.json({
         message: "User login succuessful",
@@ -39,14 +39,27 @@ app.post("/login", (req, res) => {
   });
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
   // console.log("Signup", req.body);
-  database.signup(req, res);
+  try {
+    const loginInfo = req.body;
+    const result = await database.signup(loginInfo);
+    // console.log("Result of sign up: ", result);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({
+      ok: false,
+      error: {
+        code: 400,
+        message: e.message,
+      },
+    });
+  }
 });
 
-app.post("/connectToDb", (req, res) => {
+app.post("/connectToDb", async (req, res) => {
   console.log("Connecting to mongodb");
-  var client = database.connectToServer();
+  var client = await database.connectToServer();
   if (client) {
     res.status(200).json({ message: "Connected to mongodb client" });
   } else {
@@ -54,9 +67,9 @@ app.post("/connectToDb", (req, res) => {
   }
 });
 
-app.post("/disconnectDb", (req, res) => {
+app.post("/disconnectDb", async (req, res) => {
   // console.log("Closing connection to mongodb");
-  var result = database.disconnectDb();
+  var result = await database.disconnectDb();
   if (result === true) {
     res.status(200).json({ message: "Disconnected mongodb client" });
   } else {
@@ -104,14 +117,14 @@ app.get("/getForm", (req, res) => {
   database.getForm(form).then((results) => {
     if (results === null) {
       res.status(400).json({
-        success: false,
+        ok: false,
         error: {
           code: 400,
           message: "No form found by that name.",
         },
       });
     } else {
-      res.status(200).json({ success: true, results: results });
+      res.status(200).json({ ok: true, results: results });
     }
   });
 });

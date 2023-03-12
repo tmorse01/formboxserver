@@ -76,51 +76,30 @@ module.exports = {
       console.error("ERROR with login: ", e);
     }
   },
-  signup: async function (req, res) {
-    console.log("signup: ", req, res);
-    var loginInfo = req.body;
-    const client = await this.getClient();
-    const password = loginInfo.password;
-    // you can tell when a insertOne was successful
-    bcrypt.genSalt(10, function (err, Salt) {
-      // The bcrypt is used for encrypting password.
-      bcrypt.hash(password, Salt, async function (err, hash) {
-        if (err) {
-          res.status(400).json({
-            error: {
-              code: 400,
-              message: "Cannot encrpyt password. Please try another.",
-            },
-          });
-          return console.log("Cannot encrypt");
-        }
-        try {
-          const result = await client
-            .db("formboxdata")
-            .collection("users")
-            .insertOne({
-              username: loginInfo.username,
-              password: hash,
-            });
+  signup: async function (loginInfo) {
+    // console.log("database sign up");
+    try {
+      const client = await this.getClient();
+      const password = loginInfo.password;
 
-          console.log(
-            `User sign up: ${loginInfo.username} ${result.insertedId} `
-          );
-          res
-            .status(200)
-            .json({ success: true, message: "User signup successful." });
-          return result;
-        } catch (e) {
-          console.error("Error with user sign up: ", e);
-          res.status(400).json({
-            error: {
-              code: 400,
-              message: "Username already taken.",
-            },
-          });
-        }
-      });
-    });
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(password, salt);
+      const result = await client
+        .db("formboxdata")
+        .collection("users")
+        .insertOne({
+          username: loginInfo.username,
+          password: hash,
+        });
+
+      console.log(`User sign up: ${loginInfo.username} ${result.insertedId} `);
+      return { ok: true, message: "User sign up successful." };
+    } catch (e) {
+      if (e.code === 11000) {
+        throw new Error("Username already exists.");
+      }
+      throw e;
+    }
   },
   createFormData: async function (newFormData) {
     console.log("createFormData: ", newFormData);
