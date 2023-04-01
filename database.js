@@ -48,7 +48,7 @@ module.exports = {
     }
   },
   login: async function (loginInfo) {
-    console.log("login: ", loginInfo);
+    // console.log("login: ", loginInfo);
     try {
       const client = await this.getClient();
       const result = await client
@@ -68,7 +68,18 @@ module.exports = {
         const refreshToken = auth.generateRefreshToken({
           username: loginInfo.username,
         });
-        return { accessToken, refreshToken };
+        // insert refresh token to mongdb collection
+        const refreshTokenResult = await this.insertRefreshToken(
+          loginInfo.username,
+          refreshToken
+        );
+        console.log("refreshTokenResult ", refreshTokenResult);
+        if (refreshTokenResult !== false) {
+          return { accessToken, refreshToken };
+        } else {
+          console.error("Couldn't insert refresh token", refreshToken);
+          return {};
+        }
       } else {
         return undefined;
       }
@@ -177,6 +188,51 @@ module.exports = {
       .find({ formName: formName })
       .toArray();
     return results;
+  },
+  insertRefreshToken: async function (username, refreshToken) {
+    console.log("insert refresh token :", username, refreshToken);
+    try {
+      const client = await this.getClient();
+      const refreshTokensCollection = client
+        .db("formboxdata")
+        .collection("refreshtokens");
+      const result = await refreshTokensCollection.insertOne({
+        username,
+        token: refreshToken,
+      });
+      return result.insertedId;
+    } catch (e) {
+      console.error("Error inserting refresh token: ", e);
+      return false;
+    }
+  },
+  getRefreshToken: async function (username, refreshToken) {
+    try {
+      const client = await this.getClient();
+      const refreshTokensCollection = client
+        .db("formboxdata")
+        .collection("refreshtokens");
+      const token = await refreshTokensCollection.findOne({
+        username,
+        token: refreshToken,
+      });
+      return token;
+    } catch (e) {
+      console.error("Error getting refresh token: ", e);
+    }
+  },
+  deleteRefreshToken: async function (username, refreshToken) {
+    console.log("deleteRefreshToken", username, refreshToken);
+    const client = await this.getClient();
+    const refreshTokensCollection = client
+      .db("formboxdata")
+      .collection("refreshtokens");
+    const result = await refreshTokensCollection.deleteOne({
+      username,
+      token: refreshToken,
+    });
+    console.log("result:", result);
+    return result.deletedCount;
   },
 
   // async function listDatabases(client) {

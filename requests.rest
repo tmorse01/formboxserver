@@ -1,0 +1,31 @@
+POST http://localhost:3001/token
+Content-Type: application/json
+
+{
+    "username": "Taylor",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRheWxvciIsImlhdCI6MTY4MDM3NjAzNH0.A7QtMkvAwMASQkoPJBx71LR_JHqK6D9cKOGOiAnaZ34"
+}
+###
+POST http://localhost:3001/login
+Content-Type: application/json
+
+{
+    "username": "Taylor",
+    "password": "test"
+}
+
+###
+
+GET http://localhost:3001/getForms
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRheWxvciIsImlhdCI6MTY4MDM3NjIyNiwiZXhwIjoxNjgwMzc2MjU2fQ.NKrsBabPOYF3a6y1FhhZOzPFNsxci746IbCWn89j6Wo
+
+
+### 
+DELETE http://localhost:3001/logout
+Content-Type: application/json
+
+{
+    "username": "Taylor",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRheWxvciIsImlhdCI6MTY4MDM3NjAwN30.LOWNUGqpxVv0DQR0GupPKidhdM3iWxyRgXU1LcY6Vmc"
+}

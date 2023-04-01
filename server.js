@@ -2,7 +2,7 @@ const database = require("./database");
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { authenticateToken } = require("./auth");
+const { authenticateToken, verifyRefreshToken } = require("./auth");
 const corsOptions = {
   origin: "*",
   optionsSuccessStatus: 200,
@@ -17,6 +17,19 @@ app.use(express.static("views"));
 
 app.get("/api", (req, res) => {
   res.json({ message: "Hello from server!" });
+});
+
+app.post("/token", (req, res) => {
+  const username = req.body.username;
+  const refreshToken = req.body.token;
+  if (refreshToken === null) return res.status(401);
+
+  database.getRefreshToken(username, refreshToken).then((result) => {
+    if (result.token === undefined) return res.status(403);
+    const newAccessToken = verifyRefreshToken(result.token);
+    if (newAccessToken === undefined) return res.status(400);
+    res.status(200).json({ token: newAccessToken });
+  });
 });
 
 app.post("/login", (req, res) => {
@@ -35,6 +48,25 @@ app.post("/login", (req, res) => {
         username: req.body.username,
         token: undefined,
       });
+    }
+  });
+});
+
+app.delete("/logout", (req, res) => {
+  const refreshToken = req.body.token;
+  const username = req.body.username;
+  database.deleteRefreshToken(username, refreshToken).then((deletedCount) => {
+    console.log("deletedCount: ", deletedCount);
+    if (deletedCount === 0) {
+      res.status(400).json({
+        ok: false,
+        error: {
+          code: 400,
+          message: "Error deleting refresh token.",
+        },
+      });
+    } else {
+      res.status(200).json({ deletedCount: deletedCount });
     }
   });
 });
