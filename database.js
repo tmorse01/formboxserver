@@ -206,14 +206,13 @@ module.exports = {
       return false;
     }
   },
-  getRefreshToken: async function (username, refreshToken) {
+  getRefreshToken: async function (refreshToken) {
     try {
       const client = await this.getClient();
       const refreshTokensCollection = client
         .db("formboxdata")
         .collection("refreshtokens");
       const token = await refreshTokensCollection.findOne({
-        username,
         token: refreshToken,
       });
       return token;
@@ -221,14 +220,13 @@ module.exports = {
       console.error("Error getting refresh token: ", e);
     }
   },
-  deleteRefreshToken: async function (username, refreshToken) {
-    console.log("deleteRefreshToken", username, refreshToken);
+  deleteRefreshToken: async function (refreshToken) {
+    console.log("deleteRefreshToken", refreshToken);
     const client = await this.getClient();
     const refreshTokensCollection = client
       .db("formboxdata")
       .collection("refreshtokens");
     const result = await refreshTokensCollection.deleteOne({
-      username,
       token: refreshToken,
     });
     console.log("result:", result);

@@ -2,29 +2,46 @@ const database = require("./database");
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+
 const { authenticateToken, verifyRefreshToken } = require("./auth");
 const corsOptions = {
-  origin: "*",
+  origin: process.env.ORIGIN_URL,
   optionsSuccessStatus: 200,
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("views"));
-
-// database.connectToServer();
+app.use(cookieParser());
 
 app.get("/api", (req, res) => {
   res.json({ message: "Hello from server!" });
 });
 
-app.post("/token", (req, res) => {
-  const username = req.body.username;
-  const refreshToken = req.body.token;
+app.post("/set-refresh-token", (req, res) => {
+  const refreshToken = req.body.refreshToken;
+
+  // Set the refresh token in an HTTP-only cookie with the Secure and SameSite attributes set
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+
+  res
+    .status(200)
+    .json({ ok: true, message: "Created cookie for refresh token" });
+});
+
+app.post("/generate-access-token", (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
   if (refreshToken === null) return res.status(401);
 
-  database.getRefreshToken(username, refreshToken).then((result) => {
+  database.getRefreshToken(refreshToken).then((result) => {
     if (result.token === undefined) return res.status(403);
     const newAccessToken = verifyRefreshToken(result.token);
     if (newAccessToken === undefined) return res.status(400);
@@ -34,6 +51,7 @@ app.post("/token", (req, res) => {
 
 app.post("/login", (req, res) => {
   // console.log("Login attempt", req.body);
+  // delete any existing refreshTokens for this user
   database.login(req.body).then((token) => {
     // console.log("login res: ", token);
     if (token !== undefined) {
@@ -53,10 +71,10 @@ app.post("/login", (req, res) => {
 });
 
 app.delete("/logout", (req, res) => {
-  const refreshToken = req.body.token;
-  const username = req.body.username;
-  database.deleteRefreshToken(username, refreshToken).then((deletedCount) => {
-    console.log("deletedCount: ", deletedCount);
+  const refreshToken = req.cookies.refreshToken;
+  console.log("logout refreshToken", refreshToken);
+  database.deleteRefreshToken(refreshToken).then((deletedCount) => {
+    console.log("deleteRefreshToken: ", deletedCount);
     if (deletedCount === 0) {
       res.status(400).json({
         ok: false,
