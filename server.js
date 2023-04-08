@@ -28,7 +28,9 @@ app.post("/set-refresh-token", (req, res) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
+    // secure: true, turn back on for prod
+    sameSite: "None",
+    path: "/",
   });
 
   res
@@ -38,10 +40,11 @@ app.post("/set-refresh-token", (req, res) => {
 
 app.post("/generate-access-token", (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-
+  console.log("generate-access-token", refreshToken);
   if (refreshToken === null) return res.status(401);
 
   database.getRefreshToken(refreshToken).then((result) => {
+    console.log("getRefreshToken result: ", result);
     if (result.token === undefined) return res.status(403);
     const newAccessToken = verifyRefreshToken(result.token);
     if (newAccessToken === undefined) return res.status(400);
@@ -72,9 +75,9 @@ app.post("/login", (req, res) => {
 
 app.delete("/logout", (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.log("logout refreshToken", refreshToken);
+  // console.log("logout refreshToken", refreshToken);
   database.deleteRefreshToken(refreshToken).then((deletedCount) => {
-    console.log("deleteRefreshToken: ", deletedCount);
+    // console.log("deleteRefreshToken: ", deletedCount);
     if (deletedCount === 0) {
       res.status(400).json({
         ok: false,
@@ -84,6 +87,7 @@ app.delete("/logout", (req, res) => {
         },
       });
     } else {
+      res.clearCookie("refreshToken");
       res.status(200).json({ deletedCount: deletedCount });
     }
   });

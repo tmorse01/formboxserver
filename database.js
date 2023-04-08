@@ -208,6 +208,7 @@ module.exports = {
   },
   getRefreshToken: async function (refreshToken) {
     try {
+      console.log("finding refreshToken:", refreshToken);
       const client = await this.getClient();
       const refreshTokensCollection = client
         .db("formboxdata")
@@ -215,6 +216,7 @@ module.exports = {
       const token = await refreshTokensCollection.findOne({
         token: refreshToken,
       });
+      console.log("found token :", token);
       return token;
     } catch (e) {
       console.error("Error getting refresh token: ", e);
