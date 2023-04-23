@@ -40,11 +40,11 @@ app.post("/set-refresh-token", (req, res) => {
 
 app.post("/generate-access-token", (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.log("generate-access-token", refreshToken);
+  // console.log("generate-access-token", refreshToken);
   if (refreshToken === null) return res.status(401);
 
   database.getRefreshToken(refreshToken).then((result) => {
-    console.log("getRefreshToken result: ", result);
+    // console.log("getRefreshToken result: ", result);
     if (result.token === undefined) return res.status(403);
     const newAccessToken = verifyRefreshToken(result.token);
     if (newAccessToken === undefined) return res.status(400);

@@ -190,7 +190,7 @@ module.exports = {
     return results;
   },
   insertRefreshToken: async function (username, refreshToken) {
-    console.log("insert refresh token :", username, refreshToken);
+    // console.log("insert refresh token :", username, refreshToken);
     try {
       const client = await this.getClient();
       const refreshTokensCollection = client
@@ -208,7 +208,7 @@ module.exports = {
   },
   getRefreshToken: async function (refreshToken) {
     try {
-      console.log("finding refreshToken:", refreshToken);
+      // console.log("finding refreshToken:", refreshToken);
       const client = await this.getClient();
       const refreshTokensCollection = client
         .db("formboxdata")
@@ -216,14 +216,14 @@ module.exports = {
       const token = await refreshTokensCollection.findOne({
         token: refreshToken,
       });
-      console.log("found token :", token);
+      // console.log("found token :", token);
       return token;
     } catch (e) {
       console.error("Error getting refresh token: ", e);
     }
   },
   deleteRefreshToken: async function (refreshToken) {
-    console.log("deleteRefreshToken", refreshToken);
+    // console.log("deleteRefreshToken", refreshToken);
     const client = await this.getClient();
     const refreshTokensCollection = client
       .db("formboxdata")
@@ -231,7 +231,7 @@ module.exports = {
     const result = await refreshTokensCollection.deleteOne({
       token: refreshToken,
     });
-    console.log("result:", result);
+    // console.log("result:", result);
     return result.deletedCount;
   },
 
