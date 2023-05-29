@@ -53,12 +53,19 @@ app.post("/generate-access-token", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  // console.log("Login attempt", req.body);
+  console.log("Login attempt", req.body);
   // delete any existing refreshTokens for this user
   database.login(req.body).then((token) => {
-    // console.log("login res: ", token);
+    console.log("login res: ", token);
     if (token !== undefined) {
-      res.json({
+      // set the token in the cookies for future requests
+      res.cookie("token", token.accessToken, {
+        httpOnly: true,
+        secure: true,
+        // secure: true, turn back on for prod
+        sameSite: "None",
+        path: "/",
+      }).json({
         message: "User login succuessful",
         username: req.body.username,
         token: token,
