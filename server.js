@@ -29,13 +29,28 @@ app.post("/set-refresh-token", (req, res) => {
     httpOnly: true,
     secure: true,
     // secure: true, turn back on for prod
-    sameSite: "None",
+    sameSite: "Strict",
     path: "/",
   });
 
   res
     .status(200)
     .json({ ok: true, message: "Created cookie for refresh token" });
+});
+
+app.post("/set-access-token", (req, res) => {
+  const accessToken = req.body.accessToken;
+
+  // Set the refresh token in an HTTP-only cookie with the Secure and SameSite attributes set
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: true,
+    // secure: true, turn back on for prod
+    sameSite: "Strict",
+    path: "/",
+  });
+
+  res.status(200).json({ ok: true, message: "Created cookie for acess token" });
 });
 
 app.post("/generate-access-token", (req, res) => {
@@ -56,16 +71,18 @@ app.post("/login", (req, res) => {
   console.log("Login attempt", req.body);
   // delete any existing refreshTokens for this user
   database.login(req.body).then((token) => {
-    console.log("login res: ", token);
+    // console.log("login res: ", token);
     if (token !== undefined) {
       // set the token in the cookies for future requests
-      res.cookie("token", token.accessToken, {
+      console.log("setting accessToken :", token.accessToken);
+      res.cookie("accessToken", token.accessToken, {
         httpOnly: true,
-        secure: true,
+        secure: false,
         // secure: true, turn back on for prod
-        sameSite: "None",
+        sameSite: "Strict",
         path: "/",
-      }).json({
+      });
+      res.status(200).json({
         message: "User login succuessful",
         username: req.body.username,
         token: token,
@@ -94,6 +111,7 @@ app.delete("/logout", (req, res) => {
         },
       });
     } else {
+      res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
       res.status(200).json({ deletedCount: deletedCount });
     }
@@ -165,10 +183,10 @@ app.put("/saveForm", (req, res) => {
 });
 
 app.get("/getForms", authenticateToken, (req, res) => {
-  console.log("getForms: ", req.user);
+  console.log("getForms: ", req.user, req.cookies);
   const username = req.user.username;
   database.getForms(username).then((results) => {
-    res.json({ results: results });
+    res.json({ ok: true, results: results });
   });
 });
 

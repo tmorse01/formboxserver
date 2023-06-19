@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 function generateAccessToken(username) {
-  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: "30s" });
+  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: "1s" });
 }
 
 function generateRefreshToken(username) {
@@ -12,8 +12,8 @@ module.exports = {
   generateAccessToken,
   generateRefreshToken,
   authenticateToken: function (req, res, next) {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1]; // grab token from BEARER TOKEN
+    // const authHeader = req.headers["authorization"];
+    const token = req.cookies.accessToken;
     if (token === null) return res.sendStatus(401);
 
     jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
