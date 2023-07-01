@@ -166,7 +166,7 @@ app.put("/submitFormValues", (req, res) => {
   }
 });
 
-app.put("/saveForm", (req, res) => {
+app.put("/saveForm", authenticateToken, (req, res) => {
   // console.log("saveForm", req.body);
   database.saveForm(req.body).then((success) => {
     if (success) {
