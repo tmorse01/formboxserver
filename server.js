@@ -63,7 +63,7 @@ app.post("/generate-access-token", (req, res) => {
     if (result.token === undefined) return res.status(403);
     const newAccessToken = verifyRefreshToken(result.token);
     if (newAccessToken === undefined) return res.status(400);
-    res.status(200).json({ token: newAccessToken });
+    res.status(200).json({ ok: true, token: newAccessToken });
   });
 });
 
@@ -83,15 +83,19 @@ app.post("/login", (req, res) => {
         path: "/",
       });
       res.status(200).json({
+        ok: true,
         message: "User login succuessful",
         username: req.body.username,
         token: token,
       });
     } else {
       res.json({
-        message: "Failed login. Please check your username and password.",
-        username: req.body.username,
-        token: undefined,
+        ok: false,
+        error: {
+          message: "Failed login. Please check your username and password.",
+          username: req.body.username,
+          token: undefined,
+        },
       });
     }
   });
@@ -113,7 +117,9 @@ app.delete("/logout", (req, res) => {
     } else {
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
-      res.status(200).json({ deletedCount: deletedCount });
+      res
+        .status(200)
+        .json({ ok: true, message: "Logged out", deletedCount: deletedCount });
     }
   });
 });
@@ -140,9 +146,15 @@ app.post("/connectToDb", async (req, res) => {
   console.log("Connecting to mongodb");
   var client = await database.connectToServer();
   if (client) {
-    res.status(200).json({ message: "Connected to mongodb client" });
+    res.status(200).json({ ok: true, message: "Connected to mongodb client" });
   } else {
-    res.status(500).json({ error: "Error connecting to mongodb client" });
+    res.status(500).json({
+      ok: false,
+      error: {
+        code: 500,
+        message: "Error connecting to mongodb client",
+      },
+    });
   }
 });
 
@@ -150,9 +162,12 @@ app.post("/disconnectDb", async (req, res) => {
   // console.log("Closing connection to mongodb");
   var result = await database.disconnectDb();
   if (result === true) {
-    res.status(200).json({ message: "Disconnected mongodb client" });
+    res.status(200).json({ ok: true, message: "Disconnected mongodb client" });
   } else {
-    res.status(500).json({ error: "Error disconnecting mongodb client" });
+    res.status(500).json({
+      ok: false,
+      error: { code: 500, message: "Error disconnecting mongodb client" },
+    });
   }
 });
 
@@ -160,9 +175,12 @@ app.put("/submitFormValues", (req, res) => {
   // console.log("submitFormValues");
   var insertedRecord = database.createFormData(req.body);
   if (insertedRecord) {
-    res.json({ message: "Submitted your response." });
+    res.json({ ok: true, message: "Submitted your response." });
   } else {
-    res.json({ error: "Error submitting your response." });
+    res.status(500).json({
+      ok: false,
+      error: { code: 500, message: "Error submitting your response." },
+    });
   }
 });
 
@@ -170,13 +188,11 @@ app.put("/saveForm", authenticateToken, (req, res) => {
   // console.log("saveForm", req.body);
   database.saveForm(req.body).then((success) => {
     if (success) {
-      res.json({ message: "Your form has been saved." });
+      res.json({ ok: true, message: "Your form has been saved." });
     } else {
-      // handle more error cases
-      // user not signed in
-      //
-      res.json({
-        error: "There was an error saving your form.",
+      res.status(500).json({
+        ok: false,
+        error: { code: 500, message: "There was an error saving your form." },
       });
     }
   });
@@ -186,7 +202,17 @@ app.get("/getForms", authenticateToken, (req, res) => {
   console.log("getForms: ", req.user, req.cookies);
   const username = req.user.username;
   database.getForms(username).then((results) => {
-    res.json({ ok: true, results: results });
+    if (results !== null) {
+      res.json({ ok: true, results: results });
+    } else {
+      res.status(500).json({
+        ok: false,
+        error: {
+          code: 500,
+          message: "There was an error getting your list of forms.",
+        },
+      });
+    }
   });
 });
 
@@ -212,7 +238,17 @@ app.post("/getFormData", authenticateToken, (req, res) => {
   // console.log("getFormData", req.body);
   let formName = req.body.formName;
   database.getFormData(formName).then((results) => {
-    res.json({ results: results });
+    if (results === null) {
+      res.status(400).json({
+        ok: false,
+        error: {
+          code: 400,
+          message: "No form found by that name.",
+        },
+      });
+    } else {
+      res.status(200).json({ ok: true, results: results });
+    }
   });
 });
 
