@@ -1,14 +1,11 @@
 const { MongoClient } = require("mongodb");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
 
-var _dbClient;
+const auth = require("./auth.js");
 
-function generateAccessToken(username) {
-  return jwt.sign(username, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
-}
+var _dbClient;
 
 module.exports = {
   getClient: async function () {
@@ -51,7 +48,7 @@ module.exports = {
     }
   },
   login: async function (loginInfo) {
-    console.log("login: ", loginInfo);
+    // console.log("login: ", loginInfo);
     try {
       const client = await this.getClient();
       const result = await client
@@ -65,7 +62,33 @@ module.exports = {
         encryptedUserPassword
       );
       if (isMatch) {
-        return generateAccessToken({ username: loginInfo.username });
+        const accessToken = auth.generateAccessToken({
+          username: loginInfo.username,
+        });
+        const refreshToken = auth.generateRefreshToken({
+          username: loginInfo.username,
+        });
+        // delete any existing refresh tokens for the user logging in
+        const deleteRefreshTokenResult =
+          await this.deleteRefreshTokenByUsername(loginInfo.username);
+        if (deleteRefreshTokenResult === 1)
+          console.log(
+            "Deleted existing refresh token for user: ",
+            loginInfo.username
+          );
+
+        // insert refresh token to mongdb collection
+        const refreshTokenResult = await this.insertRefreshToken(
+          loginInfo.username,
+          refreshToken
+        );
+        // console.log("refreshTokenResult ", refreshTokenResult);
+        if (refreshTokenResult !== false) {
+          return { accessToken, refreshToken };
+        } else {
+          console.error("Couldn't insert refresh token", refreshToken);
+          return {};
+        }
       } else {
         return undefined;
       }
@@ -73,51 +96,30 @@ module.exports = {
       console.error("ERROR with login: ", e);
     }
   },
-  signup: async function (req, res) {
-    console.log("signup: ", req, res);
-    var loginInfo = req.body;
-    const client = await this.getClient();
-    const password = loginInfo.password;
-    // you can tell when a insertOne was successful
-    bcrypt.genSalt(10, function (err, Salt) {
-      // The bcrypt is used for encrypting password.
-      bcrypt.hash(password, Salt, async function (err, hash) {
-        if (err) {
-          res.status(400).json({
-            error: {
-              code: 400,
-              message: "Cannot encrpyt password. Please try another.",
-            },
-          });
-          return console.log("Cannot encrypt");
-        }
-        try {
-          const result = await client
-            .db("formboxdata")
-            .collection("users")
-            .insertOne({
-              username: loginInfo.username,
-              password: hash,
-            });
+  signup: async function (loginInfo) {
+    // console.log("database sign up");
+    try {
+      const client = await this.getClient();
+      const password = loginInfo.password;
 
-          console.log(
-            `User sign up: ${loginInfo.username} ${result.insertedId} `
-          );
-          res
-            .status(200)
-            .json({ success: true, message: "User signup successful." });
-          return result;
-        } catch (e) {
-          console.error("Error with user sign up: ", e);
-          res.status(400).json({
-            error: {
-              code: 400,
-              message: "Username already taken.",
-            },
-          });
-        }
-      });
-    });
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(password, salt);
+      const result = await client
+        .db("formboxdata")
+        .collection("users")
+        .insertOne({
+          username: loginInfo.username,
+          password: hash,
+        });
+
+      console.log(`User sign up: ${loginInfo.username} ${result.insertedId} `);
+      return { ok: true, message: "User sign up successful." };
+    } catch (e) {
+      if (e.code === 11000) {
+        throw new Error("Username already exists.");
+      }
+      throw e;
+    }
   },
   createFormData: async function (newFormData) {
     console.log("createFormData: ", newFormData);
@@ -196,46 +198,63 @@ module.exports = {
       .toArray();
     return results;
   },
-
-  // async function listDatabases(client) {
-  //   const databasesList = await client.db().admin().listDatabases();
-  //   console.log("Databases:");
-  //   databasesList.databases.forEach((db) => {
-  //     console.log(`- ${db.name}`);
-  //   });
-  // }
-
-  // async function findOneFormByUserName(client, username) {
-  //   const result = await client
-  //     .db("formboxdata")
-  //     .collection("formdata")
-  //     .findOne({ username: username });
-
-  //   if (result) {
-  //     console.log(`Found a form submitted by : ${username}`);
-  //     console.log(result);
-  //   } else {
-  //     console.log(`No results`);
-  //   }
-  // }
-
-  // async function findResponseByFormName(client, formName) {
-  //   const cursor = await client
-  //     .db("formboxdata")
-  //     .collection("formdata")
-  //     .find({ name: formName });
-
-  //   const results = await cursor.toArray();
-  //   if (results) {
-  //     console.log(`Found results for form : ${formName}`);
-  //     results.forEach((result, i) => {
-  //       console.log("result", result);
-  //       //   console.log(`result ${i}: ${result}`);
-  //     });
-  //     return results;
-  //   } else {
-  //     console.log(`No results`);
-  //     return undefined;
-  //   }
-  // }
+  insertRefreshToken: async function (username, refreshToken) {
+    // console.log("insert refresh token :", username, refreshToken);
+    try {
+      const client = await this.getClient();
+      const refreshTokensCollection = client
+        .db("formboxdata")
+        .collection("refreshtokens");
+      const result = await refreshTokensCollection.insertOne({
+        username,
+        token: refreshToken,
+      });
+      return result.insertedId;
+    } catch (e) {
+      console.error("Error inserting refresh token: ", e);
+      return false;
+    }
+  },
+  getRefreshToken: async function (refreshToken) {
+    try {
+      // console.log("finding refreshToken:", refreshToken);
+      const client = await this.getClient();
+      const refreshTokensCollection = client
+        .db("formboxdata")
+        .collection("refreshtokens");
+      const token = await refreshTokensCollection.findOne({
+        token: refreshToken,
+      });
+      // console.log("found token :", token);
+      return token;
+    } catch (e) {
+      console.error("Error getting refresh token: ", e);
+    }
+  },
+  deleteRefreshTokenByUsername: async function (username) {
+    try {
+      const client = await this.getClient();
+      const refreshTokensCollection = client
+        .db("formboxdata")
+        .collection("refreshtokens");
+      const result = await refreshTokensCollection.deleteOne({
+        username: username,
+      });
+      return result.deletedCount;
+    } catch (e) {
+      console.error("Error deleting existing refresh token: ", e);
+    }
+  },
+  deleteRefreshToken: async function (refreshToken) {
+    // console.log("deleteRefreshToken", refreshToken);
+    const client = await this.getClient();
+    const refreshTokensCollection = client
+      .db("formboxdata")
+      .collection("refreshtokens");
+    const result = await refreshTokensCollection.deleteOne({
+      token: refreshToken,
+    });
+    // console.log("result:", result);
+    return result.deletedCount;
+  },
 };
