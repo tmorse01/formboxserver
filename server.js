@@ -32,7 +32,6 @@ app.post("/set-refresh-token", (req, res) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: true,
-    // secure: true, turn back on for prod
     sameSite: "Strict",
     path: "/",
   });
@@ -49,7 +48,6 @@ app.post("/set-access-token", (req, res) => {
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
-    // secure: true, turn back on for prod
     sameSite: "Strict",
     path: "/",
   });
@@ -72,17 +70,16 @@ app.post("/generate-access-token", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  console.log("Login attempt", req.body);
+  // console.log("Login attempt", req.body);
   // delete any existing refreshTokens for this user
   database.login(req.body).then((token) => {
     // console.log("login res: ", token);
     if (token !== undefined) {
       // set the token in the cookies for future requests
-      console.log("setting accessToken :", token.accessToken);
+      // console.log("setting accessToken :", token.accessToken);
       res.cookie("accessToken", token.accessToken, {
         httpOnly: true,
         secure: false,
-        // secure: true, turn back on for prod
         sameSite: "Strict",
         path: "/",
       });
@@ -176,13 +173,21 @@ app.post("/disconnectDb", async (req, res) => {
 });
 
 app.get("/getUser", (req, res) => {
-  const user = getUserFromRefreshToken(req.cookies.refreshToken);
-  if (user) {
-    res.status(200).json({ ok: true, user: user });
+  const refreshToken = req.cookies.refreshToken;
+  if (refreshToken !== undefined) {
+    const user = getUserFromRefreshToken(req.cookies.refreshToken);
+    if (user) {
+      res.status(200).json({ ok: true, user: user });
+    } else {
+      res.status(500).json({
+        ok: false,
+        error: { code: 500, message: "Error getting user" },
+      });
+    }
   } else {
-    res.status(500).json({
-      ok: false,
-      error: { code: 500, message: "Error getting user" },
+    res.status(200).json({
+      ok: true,
+      message: "No existing refresh token",
     });
   }
 });
@@ -215,7 +220,7 @@ app.put("/saveForm", authenticateToken, (req, res) => {
 });
 
 app.get("/getForms", authenticateToken, (req, res) => {
-  console.log("getForms: ", req.user, req.cookies);
+  // console.log("getForms: ", req.user, req.cookies);
   const username = req.user.username;
   database.getForms(username).then((results) => {
     if (results !== null) {

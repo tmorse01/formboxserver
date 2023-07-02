@@ -68,12 +68,21 @@ module.exports = {
         const refreshToken = auth.generateRefreshToken({
           username: loginInfo.username,
         });
+        // delete any existing refresh tokens for the user logging in
+        const deleteRefreshTokenResult =
+          await this.deleteRefreshTokenByUsername(loginInfo.username);
+        if (deleteRefreshTokenResult === 1)
+          console.log(
+            "Deleted existing refresh token for user: ",
+            loginInfo.username
+          );
+
         // insert refresh token to mongdb collection
         const refreshTokenResult = await this.insertRefreshToken(
           loginInfo.username,
           refreshToken
         );
-        console.log("refreshTokenResult ", refreshTokenResult);
+        // console.log("refreshTokenResult ", refreshTokenResult);
         if (refreshTokenResult !== false) {
           return { accessToken, refreshToken };
         } else {
@@ -222,6 +231,20 @@ module.exports = {
       console.error("Error getting refresh token: ", e);
     }
   },
+  deleteRefreshTokenByUsername: async function (username) {
+    try {
+      const client = await this.getClient();
+      const refreshTokensCollection = client
+        .db("formboxdata")
+        .collection("refreshtokens");
+      const result = await refreshTokensCollection.deleteOne({
+        username: username,
+      });
+      return result.deletedCount;
+    } catch (e) {
+      console.error("Error deleting existing refresh token: ", e);
+    }
+  },
   deleteRefreshToken: async function (refreshToken) {
     // console.log("deleteRefreshToken", refreshToken);
     const client = await this.getClient();
@@ -234,46 +257,4 @@ module.exports = {
     // console.log("result:", result);
     return result.deletedCount;
   },
-
-  // async function listDatabases(client) {
-  //   const databasesList = await client.db().admin().listDatabases();
-  //   console.log("Databases:");
-  //   databasesList.databases.forEach((db) => {
-  //     console.log(`- ${db.name}`);
-  //   });
-  // }
-
-  // async function findOneFormByUserName(client, username) {
-  //   const result = await client
-  //     .db("formboxdata")
-  //     .collection("formdata")
-  //     .findOne({ username: username });
-
-  //   if (result) {
-  //     console.log(`Found a form submitted by : ${username}`);
-  //     console.log(result);
-  //   } else {
-  //     console.log(`No results`);
-  //   }
-  // }
-
-  // async function findResponseByFormName(client, formName) {
-  //   const cursor = await client
-  //     .db("formboxdata")
-  //     .collection("formdata")
-  //     .find({ name: formName });
-
-  //   const results = await cursor.toArray();
-  //   if (results) {
-  //     console.log(`Found results for form : ${formName}`);
-  //     results.forEach((result, i) => {
-  //       console.log("result", result);
-  //       //   console.log(`result ${i}: ${result}`);
-  //     });
-  //     return results;
-  //   } else {
-  //     console.log(`No results`);
-  //     return undefined;
-  //   }
-  // }
 };
