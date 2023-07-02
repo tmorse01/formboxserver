@@ -62,7 +62,7 @@ app.post("/generate-access-token", (req, res) => {
 
   database.getRefreshToken(refreshToken).then((result) => {
     // console.log("getRefreshToken result: ", result);
-    if (result.token === undefined) return res.status(403);
+    if (result?.token === undefined || result === null) return res.status(403);
     const newAccessToken = verifyRefreshToken(result.token);
     if (newAccessToken === undefined) return res.status(400);
     res.status(200).json({ ok: true, token: newAccessToken });
