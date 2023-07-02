@@ -8,9 +8,17 @@ function generateRefreshToken(username) {
   return jwt.sign(username, process.env.REFRESH_SECRET);
 }
 
+function getUserFromRefreshToken(refreshToken) {
+  return jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, user) => {
+    if (err) throw err;
+    return user;
+  });
+}
+
 module.exports = {
   generateAccessToken,
   generateRefreshToken,
+  getUserFromRefreshToken,
   authenticateToken: function (req, res, next) {
     // const authHeader = req.headers["authorization"];
     const token = req.cookies.accessToken;

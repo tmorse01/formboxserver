@@ -4,7 +4,11 @@ const app = express();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
-const { authenticateToken, verifyRefreshToken } = require("./auth");
+const {
+  authenticateToken,
+  verifyRefreshToken,
+  getUserFromRefreshToken,
+} = require("./auth");
 const corsOptions = {
   origin: process.env.ORIGIN_URL,
   optionsSuccessStatus: 200,
@@ -167,6 +171,18 @@ app.post("/disconnectDb", async (req, res) => {
     res.status(500).json({
       ok: false,
       error: { code: 500, message: "Error disconnecting mongodb client" },
+    });
+  }
+});
+
+app.get("/getUser", (req, res) => {
+  const user = getUserFromRefreshToken(req.cookies.refreshToken);
+  if (user) {
+    res.status(200).json({ ok: true, user: user });
+  } else {
+    res.status(500).json({
+      ok: false,
+      error: { code: 500, message: "Error getting user" },
     });
   }
 });
